@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface BriefingTask {
@@ -18,25 +19,27 @@ const priorityLabels: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [tasks, setTasks] = useState<BriefingTask[]>([]);
   const [conflictCount, setConflictCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
-    fetch(`/api/briefing?founder=${encodeURIComponent(founder)}`)
-      .then((r) => r.json())
+    fetch('/api/briefing')
+      .then((r) => {
+        if (r.status === 401) { router.push('/auth'); return null; }
+        return r.json();
+      })
       .then((data) => {
+        if (!data) return;
         setTasks(data.tasks || []);
         setConflictCount(data.conflictCount || 0);
       })
       .catch(() => {
-        setTasks([
-          { priority: 'blue', title: 'Welcome to SyncGuard', context: 'Log your first decision to get started.', action: 'Log Decision' },
-        ]);
+        setTasks([{ priority: 'blue', title: 'Welcome to SyncGuard', context: 'Log your first decision to get started.', action: 'Log Decision' }]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   return (
     <div className="fade-in">

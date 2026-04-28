@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"\\(app\\)\")",
+      "Bash(mv page.tsx \"\\(app\\)/page.tsx\")",
+      "Bash(mv dashboard *)",
+      "Bash(mv log *)",
+      "Bash(mv conflicts *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(node -e ' *)",
+      "Bash(npx kill-port *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -I {} taskkill /PID {} /F)",
+      "Bash(npm uninstall *)",
+      "Bash(npm audit *)"
+    ]
+  }
+}
