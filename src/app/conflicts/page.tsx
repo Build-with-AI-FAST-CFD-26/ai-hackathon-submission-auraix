@@ -26,6 +26,9 @@ export default function ConflictsPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [taskLoading, setTaskLoading] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [resolvingId, setResolvingId] = useState<number | null>(null);
+  const [resolvingAction, setResolvingAction] = useState<'resolve' | 'override' | null>(null);
+  const [resolutionText, setResolutionText] = useState('');
 
   const fetchConflicts = useCallback(async () => {
     try {
@@ -41,20 +44,43 @@ export default function ConflictsPage() {
 
   useEffect(() => { fetchConflicts(); }, [fetchConflicts]);
 
-  const handleAction = async (id: number, action: 'resolve' | 'override') => {
-    setActionLoading(id);
+  const submitResolution = async () => {
+    if (!resolvingId || !resolvingAction || !resolutionText.trim()) return;
+    setActionLoading(resolvingId);
     try {
+      const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
       await fetch('/api/conflicts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ 
+          id: resolvingId, 
+          action: resolvingAction, 
+          resolutionText: resolutionText.trim(),
+          founder_id: founder
+        }),
       });
-      showToast(action === 'resolve' ? 'Conflict marked as resolved' : 'Overridden with newer decision', 'success');
+      showToast(resolvingAction === 'resolve' ? 'Conflict marked as resolved' : 'Overridden with newer decision', 'success');
+      setResolvingId(null);
+      setResolvingAction(null);
+      setResolutionText('');
       fetchConflicts();
     } catch {
       showToast('Error updating conflict', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleActionClick = (id: number, action: 'resolve' | 'override') => {
+    if (resolvingId === id && resolvingAction === action) {
+      // Toggle off
+      setResolvingId(null);
+      setResolvingAction(null);
+      setResolutionText('');
+    } else {
+      setResolvingId(id);
+      setResolvingAction(action);
+      setResolutionText('');
     }
   };
 
@@ -149,27 +175,58 @@ export default function ConflictsPage() {
             </div>
 
             <div className="conflict-actions">
-              <button
-                className="btn btn-success"
-                onClick={() => handleAction(c.id, 'resolve')}
-                disabled={actionLoading === c.id || taskLoading === c.id}
-              >
-                {actionLoading === c.id ? <span className="spinner" /> : '✅'} Mark Resolved
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => handleAction(c.id, 'override')}
-                disabled={actionLoading === c.id || taskLoading === c.id}
-              >
-                ⏩ Override with newer
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => handleCreateTask(c)}
-                disabled={taskLoading === c.id || actionLoading === c.id}
-              >
-                {taskLoading === c.id ? <span className="spinner" /> : '📝'} Create Task
-              </button>
+              {resolvingId === c.id ? (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <textarea
+                    className="form-textarea"
+                    placeholder={`Explain your reasoning for ${resolvingAction === 'resolve' ? 'resolving' : 'overriding'} this conflict... This will be logged to history.`}
+                    value={resolutionText}
+                    onChange={(e) => setResolutionText(e.target.value)}
+                    rows={3}
+                    style={{ marginBottom: '8px' }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={submitResolution}
+                      disabled={!resolutionText.trim() || actionLoading === c.id}
+                    >
+                      {actionLoading === c.id ? <span className="spinner" /> : '💾'} Submit & Log Decision
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => setResolvingId(null)}
+                      disabled={actionLoading === c.id}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    className="btn btn-success"
+                    onClick={() => handleActionClick(c.id, 'resolve')}
+                    disabled={actionLoading === c.id || taskLoading === c.id}
+                  >
+                    ✅ Mark Resolved
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => handleActionClick(c.id, 'override')}
+                    disabled={actionLoading === c.id || taskLoading === c.id}
+                  >
+                    ⏩ Override with newer
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => handleCreateTask(c)}
+                    disabled={taskLoading === c.id || actionLoading === c.id}
+                  >
+                    {taskLoading === c.id ? <span className="spinner" /> : '📝'} Create Task
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))

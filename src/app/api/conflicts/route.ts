@@ -27,12 +27,24 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { id, action } = await request.json();
+    const { id, action, resolutionText, founder_id } = await request.json();
     if (!id || !action) {
       return NextResponse.json({ error: 'Missing id or action' }, { status: 400 });
     }
 
     const db = getDb();
+
+    // Log the resolution as a new decision if provided
+    if (resolutionText && founder_id) {
+      const conflictData = db.prepare('SELECT conflict_type FROM conflicts WHERE id = ?').get(id) as any;
+      const cType = conflictData ? conflictData.conflict_type : 'Conflict';
+      const summary = `Resolved: ${cType}`;
+      const content = `Conflict Resolution (${action}):\n${resolutionText}`;
+      
+      db.prepare(
+        `INSERT INTO decisions (founder_id, category, content, summary) VALUES (?, ?, ?, ?)`
+      ).run(founder_id, 'Other', content, summary);
+    }
 
     if (action === 'resolve') {
       db.prepare('UPDATE conflicts SET status = ? WHERE id = ?').run('resolved', id);
