@@ -8,6 +8,7 @@ const FOUNDERS = ['Alice (CEO)', 'Bob (CTO)'];
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '⚡' },
+  { href: '/history',   label: 'History',   icon: '🕰️' },
   { href: '/log',       label: 'Log Decision', icon: '✏️' },
   { href: '/conflicts', label: 'Conflict Inbox', icon: '⚠️' },
 ];

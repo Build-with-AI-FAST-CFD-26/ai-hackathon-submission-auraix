@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface BriefingTask {
   priority: 'red' | 'amber' | 'green' | 'blue';
@@ -21,6 +22,18 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<BriefingTask[]>([]);
   const [conflictCount, setConflictCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  const handleActionClick = (action: string) => {
+    const text = action.toLowerCase();
+    if (text.includes('conflict')) {
+      router.push('/conflicts');
+    } else if (text.includes('log') || text.includes('history') || text.includes('view log')) {
+      router.push('/history');
+    } else {
+      router.push('/log');
+    }
+  };
 
   useEffect(() => {
     const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
@@ -71,7 +84,12 @@ export default function DashboardPage() {
               </div>
               <div className="priority-card-title">{task.title}</div>
               <div className="priority-card-context">{task.context}</div>
-              <button className={`priority-card-action ${task.priority}`}>{task.action}</button>
+              <button 
+                className={`priority-card-action ${task.priority}`}
+                onClick={() => handleActionClick(task.action)}
+              >
+                {task.action}
+              </button>
             </div>
           ))}
         </div>
